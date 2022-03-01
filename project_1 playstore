@@ -1,0 +1,481 @@
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "id": "42d42525",
+   "metadata": {},
+   "source": [
+    "# Google Playstore data\n",
+    "This guided project will use data from the google play store and filtered to only show free to install apps. \n",
+    "This project will allow me to practice basic data cleaning process.\n",
+    "\n",
+    "**Step 1: Opening the csv file**\n",
+    "\n",
+    "**Expected Content:**\n",
+    "\n",
+    "| App | Category | Rating | Reviews | Size | Installs | Type | Price | Content Rating | Genres | Last Updated | Current Ver | Android Ver |\n",
+    "| - | - | - | - | - | - | - | - | - | - | - | - | - | \n",
+    "| Photo Editor & Candy Camera & Grid & ScrapBook | 'ART_AND_DESIGN' | '4.1' | '159' | '19M' | '10,000+' | 'Free' | '0' | 'Everyone' | 'Art & Design' | 'January 7 2018' | '1.0.0' | '4.0.3 and up |\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 1,
+   "id": "9b32bec8",
+   "metadata": {
+    "scrolled": true
+   },
+   "outputs": [],
+   "source": [
+    "#importing file and exploring the data\n",
+    "from csv import reader\n",
+    "opened_android = open(\"C:/Users/Clyce/Desktop/Dataquest/project_1 playstore/googleplaystore.csv\", encoding='utf8')\n",
+    "read_android = reader(opened_android)\n",
+    "a_data = list(read_android)\n",
+    "# getting rid of the header\n",
+    "a_data = a_data[1:] # master file\n",
+    "\n",
+    "# to explore the csv file\n",
+    "def explore_data(data, start, end):\n",
+    "    dataset_splice = data[start:end]\n",
+    "    for row in dataset_splice:\n",
+    "        print(row)\n",
+    "        print('\\n')\n",
+    "        \n",
+    "#remove # below to use the function\n",
+    "#explore_data(a_data, 0, len(a_data))"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "dbd6232d",
+   "metadata": {},
+   "source": [
+    "**Step 2: Cleaning the data for duplication.**"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 2,
+   "id": "204df250",
+   "metadata": {
+    "scrolled": true
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Total number of apps: 10841\n",
+      "Number of unique apps: 9660\n",
+      "Number of duplicated apps: 1181\n"
+     ]
+    }
+   ],
+   "source": [
+    "# duplication remover\n",
+    "unique_app_name = [] # to check for duplicate\n",
+    "unique_app_data = [] # non duplicates\n",
+    "duplicate_name = [] # duplicates\n",
+    "for row in a_data[0:]:\n",
+    "    name = row[0]\n",
+    "    if name not in unique_app_name:\n",
+    "        unique_app_data.append(row)\n",
+    "        unique_app_name.append(name)\n",
+    "    else:\n",
+    "        duplicate_name.append(row)\n",
+    "\n",
+    "print('Total number of apps:', len(a_data))\n",
+    "print(\"Number of unique apps:\", len(unique_app_data))\n",
+    "print(\"Number of duplicated apps:\", len(duplicate_name))\n"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "94519531",
+   "metadata": {},
+   "source": [
+    "**Step 3: Filter out non english apps.**\n",
+    "\n",
+    "My approach:\n",
+    "\n",
+    "- Run through each individual string and check if it is within the ASCII range 0~127.\n",
+    "\n",
+    "- To account for emojis, I will maximum up to 3 non en range string to minimalise data loss\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 3,
+   "id": "ed9e75f1",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Number of english apps: 9598\n",
+      "Number of non-english apps: 62\n"
+     ]
+    }
+   ],
+   "source": [
+    "non_en = [] # non english apps\n",
+    "android_clean_en = [] # likely to be english apps\n",
+    "def non_en_remover(dataset):\n",
+    "    i = 0\n",
+    "    # for if 3 character non en\n",
+    "    for row in dataset:\n",
+    "        name = row[0]\n",
+    "        count = 0\n",
+    "        i += 1\n",
+    "        #now we will check the string value\n",
+    "        for string in name:\n",
+    "            string_check = ord(string)\n",
+    "            if string_check > 127:\n",
+    "                count += 1\n",
+    "        if count >= 3: \n",
+    "            # non english app\n",
+    "            non_en.append(row)\n",
+    "        else:\n",
+    "            # english app\n",
+    "            android_clean_en.append(row)\n",
+    "\n",
+    "non_en_remover(unique_app_data)\n",
+    "print('Number of english apps:', len(android_clean_en))\n",
+    "print('Number of non-english apps:',len(non_en))"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "c72394b9",
+   "metadata": {},
+   "source": [
+    "**Step 4: Filter out incorrect data** \n",
+    "\n",
+    "According to the [discussion](https://www.kaggle.com/lava18/google-play-store-apps/discussion), there is a certain row which contain inaccurate data. The maximum rating on the google playstore is 5. We will remove rows that contain rating above 5"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 4,
+   "id": "31d169af",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Error row ['Life Made WI-Fi Touchscreen Photo Frame', '1.9', '19', '3.0M', '1,000+', 'Free', '0', 'Everyone', '', 'February 11, 2018', '1.0.19', '4.0 and up']\n",
+      "\n",
+      "\n",
+      "Row number: 9240\n"
+     ]
+    }
+   ],
+   "source": [
+    "# to find out which row contain the broken data\n",
+    "def error_scout(dataset):\n",
+    "    i = 0\n",
+    "    error_count = 0\n",
+    "    for row in android_clean_en[0:]:\n",
+    "        rating = row[2]\n",
+    "        try:\n",
+    "            float_rating = float(rating)\n",
+    "            if float_rating > 5:\n",
+    "                print(\"Error row\", row)\n",
+    "                print('\\n')\n",
+    "                print('Row number:', i )\n",
+    "                error_count += 1\n",
+    "            i += 1\n",
+    "        except:\n",
+    "            pass\n",
+    "    if error_count == 0:\n",
+    "                print('No error')            \n",
+    "        \n",
+    "error_scout(android_clean_en)\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 5,
+   "id": "053aa2eb",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# we will remove the row, run once only\n",
+    "del android_clean_en[9240]"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 6,
+   "id": "f9ccd4ac",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "No error\n"
+     ]
+    }
+   ],
+   "source": [
+    "# to see if any error remains\n",
+    "error_scout(android_clean_en)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "56cf4210",
+   "metadata": {},
+   "source": [
+    "**Step 5: Filter out free apps**\n",
+    "\n",
+    "Basic looping. This function will also find detect error row that does not contain the correct value under 'Type' ('Free'/'Paid')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 7,
+   "id": "a0a40493",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Error row: ['Command & Conquer: Rivals', 'FAMILY', 'NaN', '0', 'Varies with device', '0', 'NaN', '0', 'Everyone 10+', 'Strategy', 'June 28, 2018', 'Varies with device', 'Varies with device'] \n",
+      "\n",
+      "Row number: 7983 \n",
+      "\n",
+      "Number of free app: 8845 \n",
+      "Number of paid app: 751 \n",
+      "New List generated: free_app_en and paid_app_en\n"
+     ]
+    }
+   ],
+   "source": [
+    "free_app_en = [] #free app\n",
+    "paid_app_en = [] #paid app\n",
+    "\n",
+    "def free_app_filter(dataset):\n",
+    "    free = 0\n",
+    "    paid = 0\n",
+    "    i = 0\n",
+    "    error_count = 0\n",
+    "    for row in dataset:\n",
+    "        cost = row[6]\n",
+    "        if cost == 'Free':            \n",
+    "            free_app_en.append(row)\n",
+    "        elif cost == 'Paid':\n",
+    "            paid_app_en.append(row)\n",
+    "        else:\n",
+    "            print(\"Error row:\", row, '\\n')\n",
+    "            print('Row number:', i, '\\n')\n",
+    "            error_count += 1\n",
+    "        i += 1\n",
+    "    if error_count == 0:\n",
+    "        print('No error')\n",
+    "       \n",
+    "    return print('Number of free app:', len(free_app_en), '\\nNumber of paid app:', len(paid_app_en), '\\nNew List generated: free_app_en and paid_app_en')\n",
+    "\n",
+    "free_app_filter(android_clean_en)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 8,
+   "id": "76b73d72",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# we will remove the row, run once only\n",
+    "del android_clean_en[7983]"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "eb2c410c",
+   "metadata": {},
+   "source": [
+    "**Step 6: Sorting with freq table**\n",
+    "\n",
+    "This step will create a function that display the type and its freq"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 9,
+   "id": "01444f06",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "def freq_table(dataset, index):\n",
+    "    table = {}\n",
+    "    total = 0\n",
+    "    #creating a dictionary for type and freq\n",
+    "    for row in dataset: \n",
+    "        type_i = row[index]\n",
+    "        total += 1\n",
+    "        if type_i in table:\n",
+    "            table[type_i] += 1\n",
+    "        else:\n",
+    "            table[type_i] = 1\n",
+    "    #converting freq to percentage\n",
+    "    for row in table:\n",
+    "        table[row] = round(table[row]/total * 100,2)\n",
+    "    return table\n",
+    "\n",
+    "def display_freq(dataset, index):\n",
+    "    table = freq_table(dataset, index)\n",
+    "    display_table = []\n",
+    "    \n",
+    "    #creating a tuple pair with type and its percentage, to add onto a list which will be sorted by percentage value\n",
+    "    for key in table:\n",
+    "        tuple_table = (table[key], key)\n",
+    "        display_table.append(tuple_table)    \n",
+    "    sort_table = sorted(display_table, reverse=True)\n",
+    "    \n",
+    "    #displaying sorted table for visual\n",
+    "    for element in sort_table:\n",
+    "        print(element[0], \":\", element[1])"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 10,
+   "id": "f4f6bcd0",
+   "metadata": {
+    "scrolled": false
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "18.47 : FAMILY\n",
+      "9.85 : GAME\n",
+      "8.43 : TOOLS\n",
+      "4.6 : BUSINESS\n",
+      "3.9 : PRODUCTIVITY\n",
+      "3.89 : LIFESTYLE\n",
+      "3.71 : FINANCE\n",
+      "3.53 : MEDICAL\n",
+      "3.39 : SPORTS\n",
+      "3.32 : PERSONALIZATION\n",
+      "3.23 : COMMUNICATION\n",
+      "3.09 : HEALTH_AND_FITNESS\n",
+      "2.95 : PHOTOGRAPHY\n",
+      "2.8 : NEWS_AND_MAGAZINES\n",
+      "2.67 : SOCIAL\n",
+      "2.34 : TRAVEL_AND_LOCAL\n",
+      "2.25 : SHOPPING\n",
+      "2.14 : BOOKS_AND_REFERENCE\n",
+      "1.87 : DATING\n",
+      "1.79 : VIDEO_PLAYERS\n",
+      "1.39 : MAPS_AND_NAVIGATION\n",
+      "1.29 : EDUCATION\n",
+      "1.24 : FOOD_AND_DRINK\n",
+      "1.13 : ENTERTAINMENT\n",
+      "0.94 : LIBRARIES_AND_DEMO\n",
+      "0.93 : AUTO_AND_VEHICLES\n",
+      "0.81 : HOUSE_AND_HOME\n",
+      "0.79 : WEATHER\n",
+      "0.71 : EVENTS\n",
+      "0.68 : ART_AND_DESIGN\n",
+      "0.66 : PARENTING\n",
+      "0.61 : COMICS\n",
+      "0.6 : BEAUTY\n"
+     ]
+    }
+   ],
+   "source": [
+    "# index = 1 (CATEGORY) 5 (INSTALLS), -5 (CONTENT RATING), -4 (GENRE)\n",
+    "prime_genre = display_freq(free_app_en, 1)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 11,
+   "id": "cf546ad3",
+   "metadata": {
+    "scrolled": false
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "10000000.0 : Beauty Camera - Selfie Camera\n",
+      "5000000.0 : Best Hairstyles step by step\n",
+      "1000000.0 : ipsy: Makeup, Beauty, and Tips\n",
+      "1000000.0 : Ulta Beauty\n",
+      "1000000.0 : Sephora: Skin Care, Beauty Makeup & Fragrance Shop\n",
+      "1000000.0 : Selfie Camera\n",
+      "1000000.0 : Rainbow Camera\n",
+      "1000000.0 : Mirror Camera (Mirror + Selfie Camera)\n",
+      "1000000.0 : Mirror - Zoom & Exposure -\n",
+      "1000000.0 : Filters for Selfie\n"
+     ]
+    }
+   ],
+   "source": [
+    "#lets check the top 10 apps of each category\n",
+    "#art\n",
+    "x = []\n",
+    "x_tuple = ()\n",
+    "for row in free_app_en[0:]: \n",
+    "    if row[1] == 'BEAUTY': #replace this with different categories\n",
+    "        name = row[0]\n",
+    "        int_install = row[5].replace(',', '')\n",
+    "        int_install = int_install.replace('+','')\n",
+    "        installs = float(int_install)\n",
+    "        x_tuple = (installs, name)\n",
+    "        x.append(x_tuple)\n",
+    "    sorted_x = sorted(x, reverse=True)\n",
+    "for row in sorted_x[:10]:\n",
+    "    print(row[0], \":\", row[1])"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "303b16c4",
+   "metadata": {},
+   "source": [
+    "# What we can get out of these\n",
+    "Cleaned data for cursory analysis as such - Microscoping in the 'Beauty' category, 'Beauty Camera - Selfie Camera' rank 1 with 10M installs. Followed by 5M in rank 2, and 1M in rank 3. A single app is apparently dominating this category. "
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "0299b6d6",
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 3 (ipykernel)",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.9.7"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 5
+}
